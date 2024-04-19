@@ -1,6 +1,13 @@
+[package]
+name = "ortege"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+
 [workspace]
 resolver = "2"
 members = [
-    "ortege",
     "ortege-client"
 ]
