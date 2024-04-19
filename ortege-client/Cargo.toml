@@ -4,3 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.82"
+prost = "0.12.4"
+thiserror = "1.0.58"
+tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread"] }
+tonic = { version = "0.11.0", default-features = false, features = ["codegen", "channel", "tls", "prost"] }
+
+[build-dependencies]
+anyhow = "1.0.82"
+tonic-build = "0.11.0"

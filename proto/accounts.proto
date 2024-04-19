@@ -1,0 +1,13 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+package ortege;
+
+message RegisterRequest {
+  string username = 1;
+  bytes identity = 2;
+  bytes signature = 99;
+}
+
+service Accounts {
+  rpc Register(RegisterRequest) returns (google.protobuf.Empty);
+}

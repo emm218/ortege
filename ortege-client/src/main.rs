@@ -12,6 +12,23 @@
  * You should have received a copy of the GNU Affero General Public License along with this
  * program.  If not, see <https://www.gnu.org/licenses/>.
  */
-fn main() {
-    println!("Hello, world!");
+mod proto {
+    tonic::include_proto!("ortege");
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let mut client = proto::accounts_client::AccountsClient::connect("http://[::1]:5000").await?;
+
+    let request = proto::RegisterRequest {
+        username: "emmy".to_string(),
+        identity: vec![8],
+        signature: vec![9],
+    };
+
+    let response = client.register(request).await?;
+
+    println!("RESPONSE={response:?}");
+
+    Ok(())
 }

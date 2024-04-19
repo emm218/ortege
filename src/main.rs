@@ -12,6 +12,21 @@
  * You should have received a copy of the GNU Affero General Public License along with this
  * program.  If not, see <https://www.gnu.org/licenses/>.
  */
-fn main() {
-    println!("Hello, world!");
+use tonic::transport::Server;
+
+mod accounts;
+
+use accounts::{proto::accounts_server::AccountsServer, AccountsService};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let addr = "[::1]:5000".parse()?;
+    let accounts_service = AccountsService;
+
+    Server::builder()
+        .add_service(AccountsServer::new(accounts_service))
+        .serve(addr)
+        .await?;
+
+    Ok(())
 }
