@@ -9,6 +9,8 @@ ed25519 = "2.2.3"
 ed25519-dalek = { version = "2.1.1", features = ["rand_core"] }
 prost = "0.12.4"
 rand = "0.8.5"
+sha2 = "0.10.8"
+sqlx = { version = "0.7.4", features = ["chrono", "migrate", "postgres", "runtime-tokio", "uuid"] }
 thiserror = "1.0.58"
 tokio = { version = "1.37.0", features = ["macros", "rt-multi-thread"] }
 tonic = "0.11.0"

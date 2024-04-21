@@ -21,7 +21,8 @@ use accounts::{proto::accounts_server::AccountsServer, AccountsService};
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let addr = "[::1]:5000".parse()?;
-    let accounts_service = AccountsService;
+    let pool = sqlx::PgPool::connect("postgres://postgres:postgres@127.0.0.1:5432/ortege").await?;
+    let accounts_service = AccountsService::new(pool);
 
     Server::builder()
         .add_service(AccountsServer::new(accounts_service))

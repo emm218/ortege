@@ -8,7 +8,7 @@ still very much a work in progress
 ## Todo
 
 - [x] basic public key verification on registration
-- [ ] persist registered users to database
+- [x] persist registered users to database
 - [ ] set up inboxes and message fetching
 - [ ] implement [sesame](https://www.signal.org/docs/specifications/sesame/) and
 [X3DH](https://www.signal.org/docs/specifications/x3dh/) for managing sessions

@@ -18,11 +18,22 @@ use ed25519_dalek::Signer;
 use ed25519_dalek::SigningKey;
 use rand::thread_rng;
 use tonic::codegen::StdError;
+use tonic::transport::Channel;
+use tonic::transport::Endpoint;
+
+use crate::account::proto::accounts_client::AccountsClient;
 
 mod proto {
     tonic::include_proto!("ortege");
 }
 
+#[derive(Debug, Clone)]
+pub struct RegistrationSession {
+    identity: SigningKey,
+    client: AccountsClient<Channel>,
+}
+
+#[derive(Debug, Clone)]
 pub struct Account {
     username: String,
     identity: SigningKey,
@@ -30,46 +41,61 @@ pub struct Account {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("username already taken")]
+    UsernameTaken,
     #[error(transparent)]
-    Transport(#[from] tonic::transport::Error),
-    #[error(transparent)]
-    Grpc(#[from] tonic::Status),
+    Other(tonic::Status),
 }
 
-impl Account {
-    pub fn new<T: ToString>(username: T) -> Self {
-        Self {
-            username: username.to_string(),
-            identity: SigningKey::generate(&mut thread_rng()),
+impl From<tonic::Status> for Error {
+    fn from(value: tonic::Status) -> Self {
+        match value.code() {
+            tonic::Code::AlreadyExists => Error::UsernameTaken,
+            _ => Error::Other(value),
         }
     }
+}
 
-    pub async fn register<D>(&self, dst: D) -> Result<(), Error>
+impl RegistrationSession {
+    pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
     where
-        D: TryInto<tonic::transport::Endpoint>,
+        D: TryInto<Endpoint>,
         D::Error: Into<StdError>,
     {
-        let mut client = proto::accounts_client::AccountsClient::connect(dst).await?;
+        Ok(Self {
+            client: AccountsClient::connect(dst).await?,
+            identity: SigningKey::generate(&mut thread_rng()),
+        })
+    }
 
-        let mut request_body = self.username.to_owned().into_bytes();
+    pub async fn register<T: ToString>(mut self, username: T) -> Result<Account, (Error, Self)> {
+        let username = username.to_string();
+        let username_len = username.len();
+        let mut request_body = username.into_bytes();
         request_body.extend_from_slice(self.identity.verifying_key().as_bytes());
 
         let signature = self.identity.sign(&request_body).to_vec();
 
-        let identity = request_body.split_off(self.username.len());
+        let identity = request_body.split_off(username_len);
         // we just made the bytes from a string
         let username = unsafe { String::from_utf8_unchecked(request_body) };
 
         let request = proto::RegisterRequest {
-            username,
+            username: username.clone(),
             identity,
             signature,
         };
 
-        let response = client.register(request).await?;
+        match self.client.register(request).await {
+            Ok(response) => {
+                println!("RESPONSE={response:?}");
 
-        println!("RESPONSE={response:?}");
-
-        Ok(())
+                Ok(Account {
+                    username,
+                    identity: self.identity,
+                })
+            }
+            Err(e) => Err((e.into(), self)),
+        }
     }
 }

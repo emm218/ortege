@@ -12,13 +12,30 @@
  * You should have received a copy of the GNU Affero General Public License along with this
  * program.  If not, see <https://www.gnu.org/licenses/>.
  */
+use std::io::stdin;
+
 mod account;
 
-use account::Account;
+use account::RegistrationSession;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    Account::new("emmy").register("http://[::1]:5000").await?;
+    let mut session = RegistrationSession::connect("http://[::1]:5000").await?;
+
+    let mut lines = stdin().lines();
+
+    let user = loop {
+        let line = lines.next().unwrap()?;
+        match session.register(line).await {
+            Err((e, new_session)) => {
+                session = new_session;
+                println!("{e}");
+            }
+            Ok(user) => break user,
+        }
+    };
+
+    println!("{user:?}");
 
     Ok(())
 }
